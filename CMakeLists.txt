@@ -13,6 +13,7 @@ set(blacker_cg_test_items
     b_vector_test
     bv_m_conversion_test
     matrix_test
+    translation_test
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
@@ -21,6 +22,6 @@ foreach(test_item ${blacker_cg_test_items})
     message(STATUS  "Add test file: ${PROJECT_SOURCE_DIR}/test/${test_item}.cpp")
     add_executable(${test_item}
         "${PROJECT_SOURCE_DIR}/test/${test_item}.cpp"
-        ${black_cg_lib_hpp_file}
+        ${blacker_cg_lib_hpp_files}
     )
 endforeach()

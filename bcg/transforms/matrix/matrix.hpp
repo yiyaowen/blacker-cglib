@@ -10,8 +10,8 @@
 #include <iomanip>
 #include <iostream>
 
-namespace bcg {
-
+namespace bcg
+{
     //////////////////////////////////////////////////////////////////////////////////////////////////
     // matrix
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,7 +28,7 @@ namespace bcg {
         ~matrix() = default;
 
     public:
-        // addition, subtraction
+        // addition & subtraction
         matrix<row_count, col_count, elem_type>
             operator +(const matrix<row_count, col_count, elem_type>& r_matrix) const;
         matrix<row_count, col_count, elem_type>
@@ -50,29 +50,41 @@ namespace bcg {
         matrix<row_count, r_col_count, elem_type> operator *
             (const matrix<col_count, r_col_count, elem_type>& r_matrix) const;
 
-        // only for square
         matrix<row_count, col_count, elem_type> operator ^(int power) const;
 
+        // access operator
         b_vector<col_count, elem_type>& operator [](size_t row_idx);
         const b_vector<col_count, elem_type>& operator [](size_t row_idx) const;
 
-        // derived matrices
+        // transpose
+        matrix<col_count, row_count, elem_type> transpose() const;
         matrix<col_count, row_count, elem_type> T() const;
+
+        // inverse
         matrix<row_count, col_count, elem_type> inverse() const;
 
-        matrix<row_count-1, col_count-1, elem_type> M(size_t row_idx, size_t col_idx) const; // minor matrix
+        // minor matrix
+        matrix<row_count-1, col_count-1, elem_type> minor_matrix(size_t row_idx, size_t col_idx) const;
+        matrix<row_count-1, col_count-1, elem_type> M(size_t row_idx, size_t col_idx) const;
 
+        // adjoint
         matrix<col_count, row_count, elem_type> adjoint() const;
 
-        // numeric properties
+        // min & max values
         const elem_type& min_elem() const;
         const elem_type& max_elem() const;
 
+        // trace
         elem_type trace() const;
+
+        // determinant
         elem_type determinant() const;
 
-        elem_type A(size_t row_idx, size_t col_idx) const; // cofactor determinant, i.e. (-1)^(i+j) * det(M_{ij})
+        // cofactor expansion
+        elem_type cofactor(size_t row_idx, size_t col_idx) const;
+        elem_type A(size_t row_idx, size_t col_idx) const;
 
+        // output format
         template<size_t __row_count, size_t __col_count, typename _elem_type>
         friend std::ostream& operator <<
             (std::ostream& out, const matrix<__row_count, __col_count, _elem_type>& self);
@@ -296,10 +308,10 @@ namespace bcg {
             {
                 // TODO: How to calculate determinant of high order matrix efficiently here?
                 _determinant = {};
-    //            // expand in first column
-    //            for (size_t i = 0; i < row_count; ++i) {
-    //                _determinant = _determinant + _rows[i][0] * A(i, 0);
-    //            }
+//                // expand in first column
+//                for (size_t i = 0; i < row_count; ++i) {
+//                    _determinant = _determinant + _rows[i][0] * A(i, 0);
+//                }
                 return _determinant;
             }
         }
@@ -393,7 +405,7 @@ namespace bcg {
             return (*this);
         }
         matrix<row_count, col_count, elem_type> base_matrix = make_identity_matrix<row_count, elem_type>();
-        matrix<row_count, col_count, elem_type> i_matrix = power > 0 ? (*this) : this->inverse();
+        matrix<row_count, col_count, elem_type> i_matrix = power > 0 ? (*this) : inverse();
         for (int i = 0; i < power; ++i) {
             base_matrix = base_matrix * i_matrix;
         }
@@ -416,7 +428,7 @@ namespace bcg {
     }
 
     template<size_t row_count, size_t col_count, typename elem_type>
-    matrix<col_count, row_count, elem_type> matrix<row_count, col_count, elem_type>::T() const
+    matrix<col_count, row_count, elem_type> matrix<row_count, col_count, elem_type>::transpose() const
     {
         matrix<col_count, row_count, elem_type> t_matrix;
         for (size_t i = 0; i < row_count; ++i) {
@@ -428,14 +440,20 @@ namespace bcg {
     }
 
     template<size_t row_count, size_t col_count, typename elem_type>
+    matrix<col_count, row_count, elem_type> matrix<row_count, col_count, elem_type>::T() const
+    {
+        return transpose();
+    }
+
+    template<size_t row_count, size_t col_count, typename elem_type>
     matrix<row_count, col_count, elem_type> matrix<row_count, col_count, elem_type>::inverse() const
     {
-        return this->adjoint() / this->determinant();
+        return adjoint() / determinant();
     }
 
     template<size_t row_count, size_t col_count, typename elem_type>
     matrix<row_count-1, col_count-1, elem_type>
-    matrix<row_count, col_count, elem_type>::M(size_t row_idx, size_t col_idx) const
+    matrix<row_count, col_count, elem_type>::minor_matrix(size_t row_idx, size_t col_idx) const
     {
         matrix<row_count-1, col_count-1, elem_type> m_matrix;
         for (size_t i = 0; i < row_idx; ++i) {
@@ -462,9 +480,22 @@ namespace bcg {
     }
 
     template<size_t row_count, size_t col_count, typename elem_type>
+    matrix<row_count-1, col_count-1, elem_type>
+    matrix<row_count, col_count, elem_type>::M(size_t row_idx, size_t col_idx) const
+    {
+        return minor_matrix(row_idx, col_idx);
+    }
+
+    template<size_t row_count, size_t col_count, typename elem_type>
+    elem_type matrix<row_count, col_count, elem_type>::cofactor(size_t row_idx, size_t col_idx) const
+    {
+        return M(row_idx, col_idx).determinant() * ((row_idx + col_idx) % 2 == 0 ? 1 : -1);
+    }
+
+    template<size_t row_count, size_t col_count, typename elem_type>
     elem_type matrix<row_count, col_count, elem_type>::A(size_t row_idx, size_t col_idx) const
     {
-        return this->M(row_idx, col_idx).determinant() * ((row_idx + col_idx) % 2 == 0 ? 1 : -1);
+        return cofactor(row_idx, col_idx);
     }
 
     template<size_t row_count, size_t col_count, typename elem_type>
@@ -473,7 +504,7 @@ namespace bcg {
         matrix<col_count, row_count, elem_type> a_matrix;
         for (size_t i = 0; i < col_count; ++i) {
             for (size_t j = 0; j < row_count; ++j) {
-                a_matrix[i][j] = this->A(j, i);
+                a_matrix[i][j] = A(j, i);
             }
         }
         return a_matrix;

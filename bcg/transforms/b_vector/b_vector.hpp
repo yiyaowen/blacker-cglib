@@ -8,8 +8,8 @@
 #include <iomanip>
 #include <ostream>
 
-namespace bcg {
-
+namespace bcg
+{
     // forward declarations
     template<size_t row_count, size_t col_count, typename elem_type>
     class matrix;
@@ -34,12 +34,15 @@ namespace bcg {
         explicit operator matrix<dim, 1, elem_type>();
 
     public:
+        // min & max values
         const elem_type& min_elem() const;
         const elem_type& max_elem() const;
-        elem_type magnitude() const;
-        elem_type magnitude2() const; // magnitude^2
 
-        // addition and subtraction
+        // magnitude & magnitude^2
+        elem_type magnitude() const;
+        elem_type magnitude2() const;
+
+        // addition & subtraction
         b_vector<dim, elem_type> operator +(const b_vector<dim, elem_type>& r_vector) const;
         b_vector<dim, elem_type> operator -(const b_vector<dim, elem_type>& r_vector) const;
         b_vector<dim, elem_type> operator +() const;
@@ -58,9 +61,14 @@ namespace bcg {
         // cross product
         b_vector<dim, elem_type> operator *(const b_vector<dim, elem_type>& r_vector) const;
 
+        // access operator
         elem_type& operator [](size_t idx);
         const elem_type& operator [](size_t idx) const;
 
+        // normalization
+        void normalize();
+
+        // output format
         template<size_t _dim, typename _elem_type>
         friend std::ostream& operator <<(std::ostream& out, const b_vector<_dim, _elem_type>& self);
 
@@ -284,13 +292,28 @@ namespace bcg {
         return _elems[idx];
     }
 
+    template<size_t dim, typename elem_type>
+    void b_vector<dim, elem_type>::normalize()
+    {
+        elem_type zero = {};
+        elem_type magnitude = this->magnitude();
+        if (magnitude == zero) return;
+        std::for_each(_elems.begin(), _elems.end(), [&](elem_type& value) {
+            value /= magnitude;
+        });
+        _is_magnitude_updated = false;
+        _is_min_elem_updated = _is_max_elem_updated = false;
+    }
+
     template<size_t _dim, typename _elem_type>
     std::ostream& operator <<(std::ostream& out, const b_vector<_dim, _elem_type>& self)
     {
         // TODO: This output should be handled as an unitary [<<]
-        // For example: b_vector<3> A = { b_vector<3>{}, b_vector<3>{}, b_vector<3>{} }
-        // Should be: [[     0,     0,     0,],[     0,     0,     0,],[     0,     0,     0,]]
-        // Rather than: [     [     0,     0,     0,],     [     0,     0,     0,],     [     0,     0,     0,]]
+//         For example: b_vector<3> A = { b_vector<3>{}, b_vector<3>{}, b_vector<3>{} }
+//         Should be:
+//         [[     0,     0,     0,],[     0,     0,     0,],[     0,     0,     0,]]
+//         Rather than:
+//         [     [     0,     0,     0,],     [     0,     0,     0,],     [     0,     0,     0,]]
         out << "[";
         for (size_t i = 0; i < _dim - 1; ++i) {
             out << std::setw(self.print_cell_width()) << self[i] << ",";
